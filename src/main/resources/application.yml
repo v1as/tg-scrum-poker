@@ -1,0 +1,9 @@
+tg:
+  bot:
+    token:
+    username:
+      
+logging:
+  level:
+    root: info
+    ru.v1as: debug
