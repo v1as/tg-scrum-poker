@@ -4,8 +4,8 @@ import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication
 
 @SpringBootApplication
-class GroomingBotApplication
+class ScrumPokerBotApplication
 
 fun main(args: Array<String>) {
-    runApplication<GroomingBotApplication>(*args)
+    runApplication<ScrumPokerBotApplication>(*args)
 }

@@ -10,6 +10,7 @@ import ru.v1as.tg.starter.update.callback.AbstractCallbackWithPrefixHandler
 class VoteCallback(val chatDataStorage: ChatDataStorage, val tgSender: TgSender) :
     AbstractCallbackWithPrefixHandler("vote_") {
     override fun handle(value: String, chat: TgChat, user: TgUser) {
-        chatDataStorage.vote(value, chat, user)?.let { tgSender.execute(it) }
+        val editMessageText = chatDataStorage.vote(value, chat, user)
+        editMessageText?.let { tgSender.execute(it) }
     }
 }

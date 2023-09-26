@@ -1,25 +1,26 @@
 package ru.v1as.tg.grooming
 
+import java.util.concurrent.ConcurrentHashMap
 import org.springframework.stereotype.Component
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText
 import org.telegram.telegrambots.meta.api.objects.Message
 import ru.v1as.tg.starter.exceptions.TgMessageException
 import ru.v1as.tg.starter.model.TgChat
 import ru.v1as.tg.starter.model.TgUser
-import java.util.concurrent.ConcurrentHashMap
 
 @Component
 class ChatDataStorage {
-    val chatDates: MutableMap<Long, Session> = ConcurrentHashMap()
+    private val chatDates: MutableMap<Long, Session> = ConcurrentHashMap()
 
     fun newVote(message: Message): List<EditMessageText> {
         val edits = mutableListOf<EditMessageText>()
         val chatId = message.chat.id
-        val session = chatDates[chatId]?.also {
-            if (!it.closed) {
-                edits.add(it.close())
+        val session =
+            chatDates[chatId]?.also {
+                if (!it.closed) {
+                    edits.add(it.close())
+                }
             }
-        }
         val newSession = Session(message, session?.voters() ?: emptySet())
         chatDates[chatId] = newSession
         edits.add(newSession.editMessage())
