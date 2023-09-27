@@ -1,11 +1,7 @@
 package ru.v1as.tg.grooming
 
-import java.time.LocalDateTime
-import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText
-import org.telegram.telegrambots.meta.api.objects.Message
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton
 import ru.v1as.tg.starter.model.TgUser
+import java.time.LocalDateTime
 
 const val TURN_OVER = "\uD83C\uDCCF\uD83D\uDD04"
 
@@ -13,52 +9,31 @@ const val COFFEE = "☕"
 
 const val WAITING = "⏳"
 
+const val CARD = "\uD83C\uDCCF"
+
 val VALUES = listOf("1", "2", "3", "5", "8", "13", "21", COFFEE, TURN_OVER)
 
-fun keyboard(): InlineKeyboardMarkup {
-    val rows = mutableListOf<List<InlineKeyboardButton>>()
-    var row = mutableListOf<InlineKeyboardButton>()
-    for (value in VALUES) {
-        if (row.size == 2) {
-            rows.add(row)
-            row = mutableListOf()
-        }
-        row.add(InlineKeyboardButton.builder().text(value).callbackData("vote_$value").build())
-    }
-    if (row.isNotEmpty()) {
-        rows.add(row)
-    }
-    return InlineKeyboardMarkup(rows)
-}
-
-class Session(val msg: Message, voters: Set<TgUser> = emptySet()) {
+class Session(val title: String, voters: Set<TgUser> = emptySet()) {
     private var votes: MutableMap<TgUser, Vote?> = mutableMapOf()
-    private val title: String
     var closed = false
+    var messageId = -1
 
     init {
         voters.forEach { votes[it] = null }
-        title = msg.text
     }
 
     fun voters() = votes.keys
 
-    fun close(): EditMessageText {
+    fun close() {
         if (!closed) {
             closed = true
             votes = votes.filter { it.value != null }.toMutableMap()
-            val text = buildText()
-            return EditMessageText.builder()
-                .chatId(msg.chatId)
-                .messageId(msg.messageId)
-                .text(text)
-                .replyMarkup(InlineKeyboardMarkup(emptyList()))
-                .build()
+        } else {
+            throw IllegalStateException("Already closed")
         }
-        throw IllegalStateException("Already closed")
     }
 
-    private fun buildText(): String {
+    fun text(): String {
         val votesStr =
             votes
                 .map {
@@ -66,7 +41,7 @@ class Session(val msg: Message, voters: Set<TgUser> = emptySet()) {
                         if (closed) {
                             ": " + it.value?.value.orEmpty()
                         } else {
-                            " " + (it.value?.let { "\uD83C\uDCCF" } ?: WAITING)
+                            " " + (it.value?.let { CARD } ?: WAITING)
                         }
                     it.key.usernameOrFullName() + vote
                 }
@@ -82,7 +57,8 @@ class Session(val msg: Message, voters: Set<TgUser> = emptySet()) {
                         .filter { it != null }
                         .mapToInt { it!! }
                         .average()
-                String.format("%.2f", avgVote)
+                        .orElse(.0)
+                String.format("Итог: %.2f", avgVote)
             } else {
                 ""
             }
@@ -90,28 +66,23 @@ class Session(val msg: Message, voters: Set<TgUser> = emptySet()) {
         return title + "\n\n" + votesStr + "\n\n" + voteResult
     }
 
-    fun editMessage(): EditMessageText {
-        return EditMessageText.builder()
-            .text(buildText())
-            .messageId(msg.messageId)
-            .chatId(msg.chatId)
-            .replyMarkup(keyboard())
-            .build()
-    }
-
-    fun vote(value: String, user: TgUser): EditMessageText? {
-        val oldText = buildText()
+    fun vote(value: String, user: TgUser): Voted {
         if (value == TURN_OVER) {
-            return close()
+            close()
+            return Voted.CLOSED
         }
         val prev = votes[user]
-        votes[user] =
-            if (prev?.value == value) {
-                null
+        return if (prev?.value == value) {
+            votes[user] = null
+            Voted.CLEARED
+        } else {
+            votes[user] = Vote(value)
+            if (prev?.value == null) {
+                Voted.VOTED
             } else {
-                Vote(value)
+                Voted.CHANGED
             }
-        return if (buildText() == oldText) null else editMessage()
+        }
     }
 }
 

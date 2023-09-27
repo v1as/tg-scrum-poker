@@ -4,6 +4,8 @@ tg:
     username:
       
 logging:
+  pattern:
+    console: "%-30(%d{HH:mm:ss.SSS} [%thread]){faint} %-5level  %clr(%-40.40logger{39}){cyan} %X{CHAT}:%X{USER}: %msg%n"
   level:
     root: info
     ru.v1as: debug

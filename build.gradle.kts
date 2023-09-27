@@ -22,6 +22,7 @@ dependencies {
     implementation("com.github.v1as:tg-bot-spring-boot-starter:0.0.2")
     developmentOnly("org.springframework.boot:spring-boot-devtools")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
+    testImplementation("com.github.v1as:tg-bot-spring-boot-starter:0.0.2:test-fixtures")
 }
 
 tasks.withType<KotlinCompile> {
