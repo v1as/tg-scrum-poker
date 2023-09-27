@@ -1,7 +1,7 @@
-package ru.v1as.tg.grooming
+package ru.v1as.tg.grooming.model
 
-import ru.v1as.tg.starter.model.TgUser
 import java.time.LocalDateTime
+import ru.v1as.tg.starter.model.TgUser
 
 const val TURN_OVER = "\uD83C\uDCCF\uD83D\uDD04"
 
@@ -13,7 +13,7 @@ const val CARD = "\uD83C\uDCCF"
 
 val VALUES = listOf("1", "2", "3", "5", "8", "13", "21", COFFEE, TURN_OVER)
 
-class Session(val title: String, voters: Set<TgUser> = emptySet()) {
+class Session(private val title: String, voters: Set<TgUser> = emptySet()) {
     private var votes: MutableMap<TgUser, Vote?> = mutableMapOf()
     var closed = false
     var messageId = -1

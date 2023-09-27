@@ -1,11 +1,11 @@
-package ru.v1as.tg.grooming
+package ru.v1as.tg.grooming.model
 
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import ru.v1as.tg.grooming.Voted.CLEARED
-import ru.v1as.tg.grooming.Voted.VOTED
+import ru.v1as.tg.grooming.model.Voted.CLEARED
+import ru.v1as.tg.grooming.model.Voted.VOTED
 import ru.v1as.tg.starter.model.TgTestUser
 
 class SessionTest {

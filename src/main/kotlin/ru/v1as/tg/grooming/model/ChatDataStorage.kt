@@ -1,4 +1,4 @@
-package ru.v1as.tg.grooming
+package ru.v1as.tg.grooming.model
 
 import org.springframework.stereotype.Component
 import ru.v1as.tg.starter.model.TgChat
