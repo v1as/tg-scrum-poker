@@ -2,11 +2,8 @@ package ru.v1as.tg.grooming.update
 
 import mu.KLogging
 import org.springframework.stereotype.Component
-import ru.v1as.tg.grooming.answerCallback
-import ru.v1as.tg.grooming.cleaningMessage
 import ru.v1as.tg.grooming.model.ChatDataStorage
 import ru.v1as.tg.grooming.model.Voted.*
-import ru.v1as.tg.grooming.updateMessage
 import ru.v1as.tg.starter.TgSender
 import ru.v1as.tg.starter.model.TgChat
 import ru.v1as.tg.starter.model.TgUser
@@ -39,7 +36,8 @@ class VoteCallback(val chatDataStorage: ChatDataStorage, val tgSender: TgSender)
             CLEARED ->
                 listOf(
                     updateMessage(chat, session),
-                    answerCallback(callbackRequest, "Вы отозвали голос"))
+                    answerCallback(callbackRequest, "Вы отозвали голос")
+                )
             CHANGED -> listOf(answerCallback(callbackRequest, "Вы изменили голос: $input"))
         }.forEach { tgSender.execute(it) }
     }

@@ -2,7 +2,10 @@ tg:
   bot:
     token:
     username:
-      
+
+scrum:
+  values: 1,2,3,5,8,13,21
+
 logging:
   pattern:
     console: "%-30(%d{HH:mm:ss.SSS} [%thread]){faint} %-5level  %clr(%-40.40logger{39}){cyan} %X{CHAT}:%X{USER}: %msg%n"
