@@ -1,10 +1,11 @@
 package ru.v1as.tg.grooming.update
 
+import mu.KLogging
 import org.springframework.stereotype.Component
-import ru.v1as.tg.grooming.model.ChatDataStorage
-import ru.v1as.tg.grooming.model.Voted.*
 import ru.v1as.tg.grooming.answerCallback
 import ru.v1as.tg.grooming.cleaningMessage
+import ru.v1as.tg.grooming.model.ChatDataStorage
+import ru.v1as.tg.grooming.model.Voted.*
 import ru.v1as.tg.grooming.updateMessage
 import ru.v1as.tg.starter.TgSender
 import ru.v1as.tg.starter.model.TgChat
@@ -15,6 +16,8 @@ import ru.v1as.tg.starter.update.callback.CallbackRequest
 @Component
 class VoteCallback(val chatDataStorage: ChatDataStorage, val tgSender: TgSender) :
     AbstractCallbackWithPrefixHandler("vote_") {
+
+    companion object : KLogging()
     override fun handle(
         input: String,
         chat: TgChat,
@@ -29,19 +32,15 @@ class VoteCallback(val chatDataStorage: ChatDataStorage, val tgSender: TgSender)
         }
 
         val voted = session.vote(input, user)
+        logger.debug { "Voted: $voted" }
         when (voted) {
             CLOSED -> listOf(cleaningMessage(chat, session))
             VOTED -> listOf(updateMessage(chat, session))
             CLEARED ->
                 listOf(
                     updateMessage(chat, session),
-                    answerCallback(callbackRequest, "Вы отозвали голос")
-                )
-            CHANGED ->
-                listOf(
-                    updateMessage(chat, session),
-                    answerCallback(callbackRequest, "Вы изменили голос: $input")
-                )
+                    answerCallback(callbackRequest, "Вы отозвали голос"))
+            CHANGED -> listOf(answerCallback(callbackRequest, "Вы изменили голос: $input"))
         }.forEach { tgSender.execute(it) }
     }
 }

@@ -1,6 +1,8 @@
 package ru.v1as.tg.grooming.model
 
+import java.time.Duration
 import java.time.LocalDateTime
+import java.time.LocalDateTime.now
 import ru.v1as.tg.starter.model.TgUser
 
 const val TURN_OVER = "\uD83C\uDCCF\uD83D\uDD04"
@@ -11,9 +13,11 @@ const val WAITING = "⏳"
 
 const val CARD = "\uD83C\uDCCF"
 
-val VALUES = listOf("1", "2", "3", "5", "8", "13", "21", COFFEE, TURN_OVER)
-
-class Session(private val title: String, voters: Set<TgUser> = emptySet()) {
+class Session(
+    private val title: String,
+    voters: Set<TgUser> = emptySet(),
+    val started: LocalDateTime = now()
+) {
     private var votes: MutableMap<TgUser, Vote?> = mutableMapOf()
     var closed = false
     var messageId = -1
@@ -36,6 +40,9 @@ class Session(private val title: String, voters: Set<TgUser> = emptySet()) {
     fun text(): String {
         val votesStr =
             votes
+                .toList()
+                .sortedWith((compareBy(nullsLast()) { (_, value) -> value }))
+                .toMap()
                 .map {
                     val vote =
                         if (closed) {
@@ -63,7 +70,18 @@ class Session(private val title: String, voters: Set<TgUser> = emptySet()) {
                 ""
             }
 
-        return title + "\n\n" + votesStr + "\n\n" + voteResult
+        val duration =
+            if (closed) {
+                Duration.between(started, now())
+                    .toMinutes()
+                    .takeIf { it > 0 }
+                    ?.let { "Голосовали $it минут(ы)\n" }
+                    ?: ""
+            } else {
+                ""
+            }
+
+        return title + "\n\n" + votesStr + "\n\n" + duration + voteResult
     }
 
     fun vote(value: String, user: TgUser): Voted {
@@ -86,4 +104,6 @@ class Session(private val title: String, voters: Set<TgUser> = emptySet()) {
     }
 }
 
-data class Vote(val value: String, val time: LocalDateTime = LocalDateTime.now())
+data class Vote(val value: String, val time: LocalDateTime = now()) : Comparable<Vote> {
+    override fun compareTo(other: Vote) = this.time.compareTo(other.time)
+}

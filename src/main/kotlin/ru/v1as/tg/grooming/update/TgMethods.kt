@@ -1,5 +1,8 @@
 package ru.v1as.tg.grooming
 
+import mu.KLogging
+import org.springframework.beans.factory.annotation.Value
+import org.springframework.stereotype.Component
 import org.telegram.telegrambots.meta.api.methods.AnswerCallbackQuery
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText
@@ -7,10 +10,13 @@ import org.telegram.telegrambots.meta.api.objects.Message
 import org.telegram.telegrambots.meta.api.objects.Update
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton
+import ru.v1as.tg.grooming.model.COFFEE
 import ru.v1as.tg.grooming.model.Session
-import ru.v1as.tg.grooming.model.VALUES
+import ru.v1as.tg.grooming.model.TURN_OVER
 import ru.v1as.tg.starter.model.TgChat
 import ru.v1as.tg.starter.update.callback.CallbackRequest
+
+var VALUES = listOf("1", "2", "3", "5", "8", "13", "21", COFFEE, TURN_OVER)
 
 fun buildMessage(update: Update, session: Session): SendMessage =
     SendMessage.builder()
@@ -64,4 +70,21 @@ fun votingKeyboard(): InlineKeyboardMarkup {
         rows.add(row)
     }
     return InlineKeyboardMarkup(rows)
+}
+
+@Component
+class TgMethods(@Value("\${scrum.values}") val valuesStr: String) {
+    companion object : KLogging()
+    init {
+        VALUES =
+            valuesStr
+                .split(",")
+                .toMutableList()
+                .also {
+                    it.add(COFFEE)
+                    it.add(TURN_OVER)
+                }
+                .toList()
+        logger.info { "Values: $VALUES" }
+    }
 }
