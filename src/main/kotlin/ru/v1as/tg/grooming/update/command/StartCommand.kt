@@ -1,7 +1,9 @@
-package ru.v1as.tg.grooming.update
+package ru.v1as.tg.grooming.update.command
 
 import org.springframework.stereotype.Component
 import ru.v1as.tg.grooming.model.ChatDataStorage
+import ru.v1as.tg.grooming.update.buildMessage
+import ru.v1as.tg.grooming.update.cleaningReplyMarkupMessage
 import ru.v1as.tg.starter.TgSender
 import ru.v1as.tg.starter.exceptions.TgMessageException
 import ru.v1as.tg.starter.model.base.TgChatWrapper
