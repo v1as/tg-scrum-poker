@@ -67,7 +67,7 @@ class Session(
             val avgVote = voteValueStream().average().orElse(.0)
             val template =
                 if (voteValueStream().distinct().count() == 1L) {
-                    "\uD83C\uDF89 Единогласно: %.2f"
+                    "\uD83C\uDF89 Единогласно: %.1f"
                 } else {
                     val bestMatch =
                         intVoteValues()

@@ -7,7 +7,6 @@ import ru.v1as.tg.grooming.update.buildMessage
 import ru.v1as.tg.grooming.update.cleaningReplyMarkupMessage
 import ru.v1as.tg.grooming.update.replySendMessage
 import ru.v1as.tg.starter.TgSender
-import ru.v1as.tg.starter.exceptions.TgMessageException
 import ru.v1as.tg.starter.model.TgChat
 import ru.v1as.tg.starter.model.base.TgChatWrapper
 import ru.v1as.tg.starter.model.base.TgUserWrapper
@@ -20,18 +19,14 @@ class StartCommand(val tgSender: TgSender, val chatData: ChatDataStorage) :
     override fun handle(command: CommandRequest, user: TgUserWrapper, chat: TgChatWrapper) {
         val msgSrc = command.message
         if (command.arguments.isNotEmpty()) {
-            if (chat.isUserChat()) {
-                throw TgMessageException("Command allowed only in group chat.")
-            } else {
-                chatData
-                    .getSession(chat)
-                    ?.takeIf { !it.closed }
-                    ?.let {
-                        it.close()
-                        tgSender.execute(cleaningReplyMarkupMessage(chat, it))
-                    }
-                openSession(chat, command.argumentsString, msgSrc)
-            }
+            chatData
+                .getSession(chat)
+                ?.takeIf { !it.closed }
+                ?.let {
+                    it.close()
+                    tgSender.execute(cleaningReplyMarkupMessage(chat, it))
+                }
+            openSession(chat, command.argumentsString, msgSrc)
         } else {
             val tasks = chatData.getTasks(command.chat)
             if (tasks.isNotEmpty()) {
