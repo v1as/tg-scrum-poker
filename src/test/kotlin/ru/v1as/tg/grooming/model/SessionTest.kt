@@ -5,6 +5,8 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.CsvSource
 import ru.v1as.tg.grooming.model.Voted.CLEARED
 import ru.v1as.tg.grooming.model.Voted.VOTED
 import ru.v1as.tg.starter.model.TgTestUser
@@ -12,7 +14,7 @@ import ru.v1as.tg.starter.model.TgTestUser
 class SessionTest {
     @Test
     fun shouldCreate() {
-        val session = Session("session title", emptySet())
+        val session = Session("session title")
         assertThat(session.text()).contains("session title")
 
         val bob = TgTestUser(1, "bob")
@@ -25,7 +27,7 @@ class SessionTest {
 
     @Test
     fun `should close`() {
-        val session = Session("session title", emptySet())
+        val session = Session("session title")
         session.vote("5", TgTestUser(1, "bob"))
         session.vote("2", TgTestUser(1, "mary"))
         val john = TgTestUser(1, "john")
@@ -40,16 +42,30 @@ class SessionTest {
             .contains("@mary: 2")
             .doesNotContain("john")
             .doesNotContain("Голосовали", "минут")
-            .contains("Итог: 3.50")
+            .contains("Итог: 3.5  ~  3")
     }
 
     @Test
     fun `Should calculate duration`() {
-        val session = Session("session title", emptySet(), now().minusMinutes(5))
+        val session = Session("session title", started = now().minusMinutes(5))
         val bob = TgTestUser(1, "bob")
         session.vote("5", bob)
         session.vote(TURN_OVER, bob)
         assertThat(session.text())
-            .containsSubsequence("session title", "@bob: 5", "Голосовали 5 минут", "Итог: 5")
+            .containsSubsequence("session title", "@bob: 5", "Голосовали 5 минут", "Единогласно: 5")
+    }
+
+    @ParameterizedTest
+    @CsvSource(
+        "1-2, false",
+        "1-3, true",
+        "8-8-8-5, false",
+    )
+    fun `Need discussion test`(votes: String, expected: Boolean) {
+        val session = Session("session title")
+        votes.split("-").forEachIndexed { i, vote ->
+            session.vote(vote, TgTestUser(i.toLong(), "user $i"))
+        }
+        assertEquals(expected, session.needDiscussion())
     }
 }

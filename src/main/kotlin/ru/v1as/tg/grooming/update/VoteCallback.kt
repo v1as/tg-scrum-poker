@@ -22,8 +22,9 @@ class VoteCallback(val chatDataStorage: ChatDataStorage, val tgSender: TgSender)
         callbackRequest: CallbackRequest
     ) {
         val session = chatDataStorage.getSession(chat)
-        if (session == null || session.closed) {
-            tgSender.execute(cleaningMessage(callbackRequest.update.callbackQuery.message))
+        val callbackMsg = callbackRequest.update.callbackQuery.message
+        if (session == null || session.closed || session.messageId != callbackMsg.messageId) {
+            tgSender.execute(cleaningReplyMarkupMessage(callbackMsg))
             tgSender.execute(answerCallback(callbackRequest, "Это голосование уже закрыто."))
             return
         }
@@ -31,13 +32,18 @@ class VoteCallback(val chatDataStorage: ChatDataStorage, val tgSender: TgSender)
         val voted = session.vote(input, user)
         logger.debug { "Voted: $voted" }
         when (voted) {
-            CLOSED -> listOf(cleaningMessage(chat, session))
+            CLOSED -> {
+                val message = cleaningReplyMarkupMessage(chat, session)
+                if (session.needDiscussion()) {
+                    message.replyMarkup = columnInlineKeyboardMarkup("Повторить" to "repeat")
+                }
+                listOf(message)
+            }
             VOTED -> listOf(updateMessage(chat, session))
             CLEARED ->
                 listOf(
                     updateMessage(chat, session),
-                    answerCallback(callbackRequest, "Вы отозвали голос")
-                )
+                    answerCallback(callbackRequest, "Вы отозвали голос"))
             CHANGED -> listOf(answerCallback(callbackRequest, "Вы изменили голос: $input"))
         }.forEach { tgSender.execute(it) }
     }

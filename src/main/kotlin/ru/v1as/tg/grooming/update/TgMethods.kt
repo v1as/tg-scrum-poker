@@ -4,7 +4,6 @@ import mu.KLogging
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
 import org.telegram.telegrambots.meta.api.objects.Message
-import org.telegram.telegrambots.meta.api.objects.Update
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton
 import ru.v1as.tg.grooming.model.COFFEE
@@ -14,15 +13,19 @@ import ru.v1as.tg.starter.model.TgChat
 import ru.v1as.tg.starter.update.answerCallbackQuery
 import ru.v1as.tg.starter.update.callback.CallbackRequest
 import ru.v1as.tg.starter.update.editMessageText
+import ru.v1as.tg.starter.update.inlineKeyboardButton
 import ru.v1as.tg.starter.update.sendMessage
 
 var VALUES = listOf("1", "2", "3", "5", "8", "13", "21", COFFEE, TURN_OVER)
 
-fun buildMessage(update: Update, session: Session) = sendMessage {
-    chatId = update.message.chatId.toString()
+fun intVoteValues(): List<Int> =
+    VALUES.stream().map { it.toIntOrNull() }.filter { it != null }.map { it!! }.toList()
+
+fun buildMessage(message: Message?, session: Session) = sendMessage {
+    chatId = message?.chatId.toString()
     text = session.text()
     replyMarkup = votingKeyboard()
-    messageThreadId = update.message.messageThreadId
+    messageThreadId = message?.messageThreadId
 }
 
 fun updateMessage(chat: TgChat, session: Session) = editMessageText {
@@ -32,21 +35,30 @@ fun updateMessage(chat: TgChat, session: Session) = editMessageText {
     replyMarkup = votingKeyboard()
 }
 
-fun cleaningMessage(message: Message) = editMessageText {
+fun cleaningReplyMarkupMessage(message: Message) = editMessageText {
     chatId = message.chatId.toString()
     messageId = message.messageId
     text = message.text
-    replyMarkup = emptyInlineKeyboardMarkup()
+    replyMarkup = columnInlineKeyboardMarkup()
 }
 
-fun cleaningMessage(chat: TgChat, session: Session) = editMessageText {
+fun cleaningReplyMarkupMessage(chat: TgChat, session: Session) = editMessageText {
     chatId = chat.getId().toString()
     messageId = session.messageId
     text = session.text()
-    replyMarkup = emptyInlineKeyboardMarkup()
+    replyMarkup = columnInlineKeyboardMarkup()
 }
 
-fun emptyInlineKeyboardMarkup() = InlineKeyboardMarkup(emptyList())
+fun columnInlineKeyboardMarkup(vararg buttons: Pair<String, String>): InlineKeyboardMarkup {
+    return InlineKeyboardMarkup(
+        listOf(
+            buttons.map {
+                inlineKeyboardButton {
+                    text = it.first
+                    callbackData = it.second
+                }
+            }))
+}
 
 fun answerCallback(callbackRequest: CallbackRequest, text: String) = answerCallbackQuery {
     callbackQueryId = callbackRequest.callbackQueryId()
@@ -55,16 +67,19 @@ fun answerCallback(callbackRequest: CallbackRequest, text: String) = answerCallb
 
 fun votingKeyboard(): InlineKeyboardMarkup {
     val rows = mutableListOf<List<InlineKeyboardButton>>()
-    var row = mutableListOf<InlineKeyboardButton>()
+    var tempRow = mutableListOf<InlineKeyboardButton>()
     for (value in VALUES) {
-        if (row.size == 2) {
-            rows.add(row)
-            row = mutableListOf()
+        if (tempRow.size == 2) {
+            rows += tempRow
+            tempRow = mutableListOf()
         }
-        row.add(InlineKeyboardButton.builder().text(value).callbackData("vote_$value").build())
+        tempRow += inlineKeyboardButton {
+            text = value
+            callbackData = "vote_$value"
+        }
     }
-    if (row.isNotEmpty()) {
-        rows.add(row)
+    if (tempRow.isNotEmpty()) {
+        rows += tempRow
     }
     return InlineKeyboardMarkup(rows)
 }

@@ -17,14 +17,15 @@ class StartCommand(val tgSender: TgSender, val chatData: ChatDataStorage) :
             if (chat.isUserChat()) {
                 throw TgMessageException("Command allowed only in group chat.")
             } else {
-                chatData.getSession(chat)?.let {
-                    if (!it.closed) {
+                chatData
+                    .getSession(chat)
+                    ?.takeIf { !it.closed }
+                    ?.let {
                         it.close()
-                        tgSender.execute(cleaningMessage(chat, it))
+                        tgSender.execute(cleaningReplyMarkupMessage(chat, it))
                     }
-                }
                 val session = chatData.newSession(command.argumentsString, chat)
-                val message = tgSender.execute(buildMessage(command.update, session))
+                val message = tgSender.execute(buildMessage(command.update.message, session))
                 session.messageId = message.messageId
             }
         }
