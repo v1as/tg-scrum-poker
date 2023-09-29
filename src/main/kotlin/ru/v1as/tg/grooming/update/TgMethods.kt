@@ -3,6 +3,7 @@ package ru.v1as.tg.grooming.update
 import mu.KLogging
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
+import org.telegram.telegrambots.meta.api.methods.send.SendMessage
 import org.telegram.telegrambots.meta.api.objects.Message
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton
@@ -14,19 +15,27 @@ import ru.v1as.tg.starter.update.answerCallbackQuery
 import ru.v1as.tg.starter.update.callback.CallbackRequest
 import ru.v1as.tg.starter.update.editMessageText
 import ru.v1as.tg.starter.update.inlineKeyboardButton
-import ru.v1as.tg.starter.update.sendMessage
 
 var VALUES = listOf("1", "2", "3", "5", "8", "13", "21", COFFEE, TURN_OVER)
 
 fun intVoteValues(): List<Int> =
     VALUES.stream().map { it.toIntOrNull() }.filter { it != null }.map { it!! }.toList()
 
-fun buildMessage(message: Message?, session: Session) = sendMessage {
-    chatId = message?.chatId.toString()
-    text = session.text()
-    replyMarkup = votingKeyboard()
-    messageThreadId = message?.messageThreadId
+fun Message.replySendMessage(block: SendMessage.() -> Unit = {}): SendMessage {
+    val srcMsg = this
+    return SendMessage().apply {
+        this.text = text
+        messageThreadId = srcMsg.messageThreadId
+        chatId = srcMsg.chatId.toString()
+        this.apply(block)
+    }
 }
+
+fun buildMessage(message: Message, session: Session) =
+    message.replySendMessage {
+        text = session.text()
+        replyMarkup = votingKeyboard()
+    }
 
 fun updateMessage(chat: TgChat, session: Session) = editMessageText {
     chatId = chat.getId().toString()

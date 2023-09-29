@@ -1,9 +1,9 @@
 package ru.v1as.tg.grooming.update.command
 
 import org.springframework.stereotype.Component
-import org.telegram.telegrambots.meta.api.methods.send.SendMessage
 import ru.v1as.tg.grooming.model.ChatDataStorage
 import ru.v1as.tg.grooming.update.buildMessage
+import ru.v1as.tg.grooming.update.replySendMessage
 import ru.v1as.tg.starter.TgSender
 import ru.v1as.tg.starter.model.base.TgChatWrapper
 import ru.v1as.tg.starter.model.base.TgUserWrapper
@@ -17,12 +17,7 @@ class RepeatCommand(val tgSender: TgSender, val chatData: ChatDataStorage) :
         val msg = command.update.message
         val prevSession = chatData.getSession(chat)
         if (prevSession == null || !prevSession.closed) {
-            tgSender.execute(
-                SendMessage().apply {
-                    text = "Не нашёл голосование для повторения."
-                    messageThreadId = msg.messageThreadId
-                    chatId = msg.chatId.toString()
-                })
+            tgSender.execute(msg.replySendMessage { text = "Не нашёл голосование для повторения." })
             return
         }
         val session = chatData.newSession(prevSession.title, chat)

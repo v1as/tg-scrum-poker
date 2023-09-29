@@ -2,7 +2,6 @@ package ru.v1as.tg.grooming.model
 
 import org.springframework.stereotype.Component
 import ru.v1as.tg.starter.model.TgChat
-import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 
 @Component
@@ -13,9 +12,10 @@ class ChatDataStorage {
         return chatDates[chat.getId()]?.session
     }
 
+    fun getTasks(chat: TgChat) = chatDates.computeIfAbsent(chat.getId()) { ChatData() }.tasks
+
     fun newSession(title: String, chat: TgChat): Session {
-        val chatId = chat.getId()
-        val chatData = chatDates.computeIfAbsent(chatId) { ChatData() }
+        val chatData = chatDates.computeIfAbsent(chat.getId()) { ChatData() }
         val session = chatData.session
         session?.takeIf { !it.closed }?.apply { throw IllegalStateException("Not closed session.") }
 
@@ -25,7 +25,4 @@ class ChatDataStorage {
     }
 }
 
-data class ChatData(
-    var session: Session? = null,
-    val tasks: MutableList<StringJoiner> = mutableListOf()
-)
+data class ChatData(var session: Session? = null, val tasks: MutableList<String> = mutableListOf())
