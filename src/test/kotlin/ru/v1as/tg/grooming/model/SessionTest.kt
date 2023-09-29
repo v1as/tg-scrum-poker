@@ -46,6 +46,24 @@ class SessionTest {
     }
 
     @Test
+    fun `Should not write best match if unnecessary`() {
+        val session = Session("session title")
+        session.vote("5", TgTestUser(1, "bob"))
+        session.vote("21", TgTestUser(1, "mary"))
+        session.close()
+        assertThat(session.text()).doesNotContain("  ~  ")
+    }
+
+    @Test
+    fun `Should write best match if necessary`() {
+        val session = Session("session title")
+        session.vote("13", TgTestUser(1, "bob"))
+        session.vote("21", TgTestUser(1, "mary"))
+        session.close()
+        assertThat(session.text()).contains("  ~  21")
+    }
+
+    @Test
     fun `Should calculate duration`() {
         val session = Session("session title", started = now().minusMinutes(5))
         val bob = TgTestUser(1, "bob")

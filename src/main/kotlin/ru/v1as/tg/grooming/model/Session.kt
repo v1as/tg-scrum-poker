@@ -1,11 +1,11 @@
 package ru.v1as.tg.grooming.model
 
-import ru.v1as.tg.grooming.update.intVoteValues
-import ru.v1as.tg.starter.model.TgUser
 import java.time.Duration
 import java.time.LocalDateTime
 import java.time.LocalDateTime.now
 import kotlin.math.abs
+import ru.v1as.tg.grooming.update.intVoteValues
+import ru.v1as.tg.starter.model.TgUser
 
 const val TURN_OVER = "\uD83C\uDCCF\uD83D\uDD04"
 
@@ -77,7 +77,10 @@ class Session(
                             .distinctBy { it.second }
                             .map { it.first }
                             .last()
-                    "⚖ Итог: %.1f  ~  $bestMatch"
+                            .takeIf { abs(avgVote - it.toDouble()) > 0.001 }
+                            ?.let { "  ~  $it" }
+                            .orEmpty()
+                    "⚖ Итог: %.1f$bestMatch"
                 }
             String.format(template, avgVote)
         } else {
