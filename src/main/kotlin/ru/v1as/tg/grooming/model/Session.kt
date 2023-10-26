@@ -1,11 +1,11 @@
 package ru.v1as.tg.grooming.model
 
+import ru.v1as.tg.grooming.update.intVoteValues
+import ru.v1as.tg.starter.model.TgUser
 import java.time.Duration
 import java.time.LocalDateTime
 import java.time.LocalDateTime.now
 import kotlin.math.abs
-import ru.v1as.tg.grooming.update.intVoteValues
-import ru.v1as.tg.starter.model.TgUser
 
 const val TURN_OVER = "\uD83C\uDCCF\uD83D\uDD04"
 
@@ -15,12 +15,16 @@ const val WAITING = "⏳"
 
 const val CARD = "\uD83C\uDCCF"
 
+const val COMMENT = "\uD83D\uDCAC"
+
 class Session(
     val title: String,
     voters: Set<TgUser> = emptySet(),
     private val started: LocalDateTime = now()
 ) {
     private var votes: MutableMap<TgUser, Vote?> = mutableMapOf()
+    private var avg = -1.0
+    private var bestMatch = -1
     var closed = false
     var messageId = -1
 
@@ -34,6 +38,14 @@ class Session(
         if (!closed) {
             closed = true
             votes = votes.filter { it.value != null }.toMutableMap()
+            avg = voteValueStream().average().orElse(.0)
+            bestMatch = intVoteValues()
+                .map { v -> v to abs((v - avg)) }
+                .sortedBy { it.second }
+                .reversed()
+                .distinctBy { it.second }
+                .map { it.first }
+                .last()
         } else {
             throw IllegalStateException("Already closed")
         }
@@ -48,7 +60,7 @@ class Session(
     fun needDiscussion(): Boolean {
         val max = voteValueStream().max().orElse(0)
         val min = voteValueStream().min().orElse(0)
-        return intVoteValues().count { it in min..max } > 2
+        return intVoteValues().count { it in min..max } > 3
     }
 
     private fun durationString() =
@@ -64,25 +76,17 @@ class Session(
 
     private fun voteResultString() =
         if (closed) {
-            val avgVote = voteValueStream().average().orElse(.0)
             val template =
                 if (voteValueStream().distinct().count() == 1L) {
                     "\uD83C\uDF89 Единогласно: %.1f"
                 } else {
-                    val bestMatch =
-                        intVoteValues()
-                            .map { v -> v to abs((v - avgVote)) }
-                            .sortedBy { it.second }
-                            .reversed()
-                            .distinctBy { it.second }
-                            .map { it.first }
-                            .last()
-                            .takeIf { abs(avgVote - it.toDouble()) > 0.001 }
-                            ?.let { "  ~  $it" }
-                            .orEmpty()
-                    "⚖ Итог: %.1f$bestMatch"
+                    val bestMatchStr = bestMatch
+                        .takeIf { abs(avg - it.toDouble()) > 0.001 }
+                        ?.let { "  ~  $it" }
+                        .orEmpty()
+                    "⚖ Итог: %.1f$bestMatchStr"
                 }
-            String.format(template, avgVote)
+            String.format(template, avg)
         } else {
             ""
         }
@@ -102,13 +106,21 @@ class Session(
             .map {
                 val vote =
                     if (closed) {
-                        ": " + it.value?.value.orEmpty()
+                        val commentSuffix = needComment(it.value).takeIf { it }?.let { " $COMMENT" }.orEmpty()
+                        ": " + it.value?.value.orEmpty() + commentSuffix
                     } else {
                         " " + (it.value?.let { CARD } ?: WAITING)
                     }
                 it.key.usernameOrFullName() + vote
             }
             .joinToString("\n")
+
+    private fun needComment(vote: Vote?): Boolean {
+        val voteInt = vote?.value?.toIntOrNull() ?: return false
+        val min = voteInt.coerceAtMost(bestMatch)
+        val max = voteInt.coerceAtLeast(bestMatch)
+        return intVoteValues().count { it in min..max } > 2
+    }
 
     fun vote(value: String, user: TgUser): Voted {
         if (value == TURN_OVER) {

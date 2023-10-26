@@ -1,6 +1,5 @@
 package ru.v1as.tg.grooming.model
 
-import java.time.LocalDateTime.now
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -10,6 +9,7 @@ import org.junit.jupiter.params.provider.CsvSource
 import ru.v1as.tg.grooming.model.Voted.CLEARED
 import ru.v1as.tg.grooming.model.Voted.VOTED
 import ru.v1as.tg.starter.model.TgTestUser
+import java.time.LocalDateTime.now
 
 class SessionTest {
     @Test
@@ -46,6 +46,21 @@ class SessionTest {
     }
 
     @Test
+    fun `Should comment votes`() {
+        val session = Session("session title")
+        session.vote("1", TgTestUser(1, "bob"))
+        session.vote("1", TgTestUser(1, "mary"))
+        session.vote("1", TgTestUser(1, "john"))
+        session.vote("5", TgTestUser(1, "zakh"))
+        session.close()
+        assertThat(session.text())
+            .contains("@zakh: 5 \uD83D\uDCAC")
+            .doesNotContain("@mary: 1 \uD83D\uDCAC")
+            .doesNotContain("@john: 1 \uD83D\uDCAC")
+            .doesNotContain("@bob: 1 \uD83D\uDCAC")
+    }
+
+    @Test
     fun `Should not write best match if unnecessary`() {
         val session = Session("session title")
         session.vote("5", TgTestUser(1, "bob"))
@@ -76,7 +91,7 @@ class SessionTest {
     @ParameterizedTest
     @CsvSource(
         "1-2, false",
-        "1-3, true",
+        "1-5, true",
         "8-8-8-5, false",
     )
     fun `Need discussion test`(votes: String, expected: Boolean) {

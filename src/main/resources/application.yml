@@ -1,14 +1,20 @@
 tg:
   bot:
-    token:
-    username:
+    token: ${TG_BOT_TOKEN}
+    username: ${TG_BOT_USERNAME}
+#  proxy:
+#    host: ${TG_PROXY_HOST}
+#    port: ${TG_PROXY_PORT}
+#    type: ${TG_PROXY_TYPE}
+#    username: ${TG_PROXY_USER}
+#    password: ${TG_PROXY_PASS}
 
 scrum:
   values: 1,2,3,5,8,13,21
 
 logging:
   pattern:
-    console: "%-30(%d{HH:mm:ss.SSS} [%thread]){faint} %-5level  %clr(%-40.40logger{39}){cyan} %X{CHAT}:%X{USER}: %msg%n"
+    console: "%-30(%d{dd.MM.yy HH:mm:ss.SSS} [%thread]){faint} %-5level  %clr(%-40.40logger{39}){cyan} %X{CHAT}:%X{USER}: %msg%n"
   level:
     root: info
     ru.v1as: debug
