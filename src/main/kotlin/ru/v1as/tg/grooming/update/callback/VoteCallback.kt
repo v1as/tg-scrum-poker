@@ -19,6 +19,7 @@ class VoteCallback(val chatDataStorage: ChatDataStorage, val tgSender: TgSender)
     AbstractCallbackWithPrefixHandler("vote_") {
 
     companion object : KLogging()
+
     override fun handle(
         input: String,
         chat: TgChat,
@@ -47,8 +48,7 @@ class VoteCallback(val chatDataStorage: ChatDataStorage, val tgSender: TgSender)
             CLEARED ->
                 listOf(
                     updateMessage(chat, session),
-                    answerCallback(callbackRequest, "Вы отозвали голос")
-                )
+                    answerCallback(callbackRequest, "Вы отозвали голос"))
             CHANGED -> listOf(answerCallback(callbackRequest, "Вы изменили голос: $input"))
         }.forEach { tgSender.execute(it) }
     }

@@ -1,5 +1,6 @@
 package ru.v1as.tg.grooming.model
 
+import java.time.LocalDateTime.now
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -9,7 +10,6 @@ import org.junit.jupiter.params.provider.CsvSource
 import ru.v1as.tg.grooming.model.Voted.CLEARED
 import ru.v1as.tg.grooming.model.Voted.VOTED
 import ru.v1as.tg.starter.model.TgTestUser
-import java.time.LocalDateTime.now
 
 class SessionTest {
     @Test

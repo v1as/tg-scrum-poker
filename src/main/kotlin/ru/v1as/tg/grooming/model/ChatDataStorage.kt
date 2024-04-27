@@ -1,8 +1,8 @@
 package ru.v1as.tg.grooming.model
 
+import java.util.concurrent.ConcurrentHashMap
 import org.springframework.stereotype.Component
 import ru.v1as.tg.starter.model.TgChat
-import java.util.concurrent.ConcurrentHashMap
 
 @Component
 class ChatDataStorage {

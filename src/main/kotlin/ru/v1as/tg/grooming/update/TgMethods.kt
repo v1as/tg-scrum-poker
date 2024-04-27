@@ -95,6 +95,7 @@ fun votingKeyboard(): InlineKeyboardMarkup {
 @Component
 class TgMethods(@Value("\${scrum.values}") val valuesStr: String) {
     companion object : KLogging()
+
     init {
         VALUES =
             valuesStr

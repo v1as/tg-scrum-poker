@@ -1,11 +1,11 @@
 package ru.v1as.tg.grooming.model
 
-import ru.v1as.tg.grooming.update.intVoteValues
-import ru.v1as.tg.starter.model.TgUser
 import java.time.Duration
 import java.time.LocalDateTime
 import java.time.LocalDateTime.now
 import kotlin.math.abs
+import ru.v1as.tg.grooming.update.intVoteValues
+import ru.v1as.tg.starter.model.TgUser
 
 const val TURN_OVER = "\uD83C\uDCCF\uD83D\uDD04"
 
@@ -39,13 +39,14 @@ class Session(
             closed = true
             votes = votes.filter { it.value != null }.toMutableMap()
             avg = voteValueStream().average().orElse(.0)
-            bestMatch = intVoteValues()
-                .map { v -> v to abs((v - avg)) }
-                .sortedBy { it.second }
-                .reversed()
-                .distinctBy { it.second }
-                .map { it.first }
-                .last()
+            bestMatch =
+                intVoteValues()
+                    .map { v -> v to abs((v - avg)) }
+                    .sortedBy { it.second }
+                    .reversed()
+                    .distinctBy { it.second }
+                    .map { it.first }
+                    .last()
         } else {
             throw IllegalStateException("Already closed")
         }
@@ -80,10 +81,11 @@ class Session(
                 if (voteValueStream().distinct().count() == 1L) {
                     "\uD83C\uDF89 Единогласно: %.1f"
                 } else {
-                    val bestMatchStr = bestMatch
-                        .takeIf { abs(avg - it.toDouble()) > 0.001 }
-                        ?.let { "  ~  $it" }
-                        .orEmpty()
+                    val bestMatchStr =
+                        bestMatch
+                            .takeIf { abs(avg - it.toDouble()) > 0.001 }
+                            ?.let { "  ~  $it" }
+                            .orEmpty()
                     "⚖ Итог: %.1f$bestMatchStr"
                 }
             String.format(template, avg)
@@ -106,7 +108,8 @@ class Session(
             .map {
                 val vote =
                     if (closed) {
-                        val commentSuffix = needComment(it.value).takeIf { it }?.let { " $COMMENT" }.orEmpty()
+                        val commentSuffix =
+                            needComment(it.value).takeIf { it }?.let { " $COMMENT" }.orEmpty()
                         ": " + it.value?.value.orEmpty() + commentSuffix
                     } else {
                         " " + (it.value?.let { CARD } ?: WAITING)
