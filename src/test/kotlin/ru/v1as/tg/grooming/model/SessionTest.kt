@@ -1,6 +1,5 @@
 package ru.v1as.tg.grooming.model
 
-import java.time.LocalDateTime.now
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -10,6 +9,7 @@ import org.junit.jupiter.params.provider.CsvSource
 import ru.v1as.tg.grooming.model.Voted.CLEARED
 import ru.v1as.tg.grooming.model.Voted.VOTED
 import ru.v1as.tg.starter.model.TgTestUser
+import java.time.LocalDateTime.now
 
 class SessionTest {
     @Test
@@ -43,6 +43,21 @@ class SessionTest {
             .doesNotContain("john")
             .doesNotContain("Голосовали", "минут")
             .contains("Итог: 3.5  ~  3")
+    }
+
+    @Test
+    fun `Should close after reset`() {
+        val session = Session("session title")
+        val bob = TgTestUser(1, "bob")
+        session.vote("5", bob)
+        session.resetVotes()
+        session.close()
+        assertThat(session.voters()).contains(bob)
+        assertThat(session.text())
+            .contains("session title")
+            .contains("bob", WAITING)
+            .doesNotContain("5")
+            .contains("Итог: 0.0  ~  1")
     }
 
     @Test

@@ -1,11 +1,11 @@
 package ru.v1as.tg.grooming.model
 
+import ru.v1as.tg.grooming.update.intVoteValues
+import ru.v1as.tg.starter.model.TgUser
 import java.time.Duration
 import java.time.LocalDateTime
 import java.time.LocalDateTime.now
 import kotlin.math.abs
-import ru.v1as.tg.grooming.update.intVoteValues
-import ru.v1as.tg.starter.model.TgUser
 
 const val TURN_OVER = "\uD83C\uDCCF\uD83D\uDD04"
 
@@ -33,6 +33,14 @@ class Session(
     }
 
     fun voters() = votes.keys
+
+    fun resetVotes() {
+        if (!closed) {
+            votes = votes.mapValues { Vote(WAITING) }.toMutableMap()
+        } else {
+            throw IllegalStateException("Already closed")
+        }
+    }
 
     fun close() {
         if (!closed) {

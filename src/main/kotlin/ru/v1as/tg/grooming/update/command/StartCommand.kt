@@ -12,10 +12,15 @@ import ru.v1as.tg.starter.model.base.TgChatWrapper
 import ru.v1as.tg.starter.model.base.TgUserWrapper
 import ru.v1as.tg.starter.update.command.AbstractCommandHandler
 import ru.v1as.tg.starter.update.command.CommandRequest
+import ru.v1as.tg.starter.update.request.RequestUpdateHandler
+import ru.v1as.tg.starter.update.request.replyOnMessageRequest
 
 @Component
-class StartCommand(val tgSender: TgSender, val chatData: ChatDataStorage) :
-    AbstractCommandHandler("start") {
+class StartCommand(
+    val tgSender: TgSender,
+    val chatData: ChatDataStorage,
+    val requestUpdateHandler: RequestUpdateHandler
+) : AbstractCommandHandler("start") {
     override fun handle(command: CommandRequest, user: TgUserWrapper, chat: TgChatWrapper) {
         val msgSrc = command.message
         if (command.arguments.isNotEmpty()) {
@@ -33,13 +38,16 @@ class StartCommand(val tgSender: TgSender, val chatData: ChatDataStorage) :
                 val task = tasks.removeFirst()
                 openSession(chat, task, msgSrc)
             } else {
-                tgSender.execute(
-                    msgSrc.replySendMessage {
-                        text =
-                            "Тело команды пусто.\n" +
-                                "Отправьте, например, '/start TGSM-123 Описание задачи'" +
-                                "или воспользуйтесь командой /add_all."
-                    })
+                val msg =
+                    tgSender.execute(
+                        msgSrc.replySendMessage {
+                            text =
+                                "Отправьте, описание задачи ответом на это сообщение.\n" +
+                                    "(Бот имеет доступ только ответам на свои сообщения)"
+                        })
+                requestUpdateHandler.register(
+                    replyOnMessageRequest(
+                        msg, { openSession(chat, it.message.text, it.message) }, user))
             }
         }
     }

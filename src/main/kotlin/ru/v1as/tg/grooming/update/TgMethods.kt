@@ -24,7 +24,9 @@ fun intVoteValues(): List<Int> =
 fun Message.replySendMessage(block: SendMessage.() -> Unit = {}): SendMessage {
     val srcMsg = this
     return SendMessage().apply {
-        messageThreadId = srcMsg.messageThreadId
+        if (srcMsg.replyToMessage?.messageId != srcMsg.messageThreadId) {
+            messageThreadId = srcMsg.messageThreadId
+        }
         chatId = srcMsg.chatId.toString()
         this.apply(block)
     }
