@@ -1,11 +1,12 @@
 package ru.v1as.tg.grooming.model
 
-import ru.v1as.tg.grooming.update.intVoteValues
-import ru.v1as.tg.starter.model.TgUser
 import java.time.Duration
 import java.time.LocalDateTime
 import java.time.LocalDateTime.now
+import java.util.*
 import kotlin.math.abs
+import ru.v1as.tg.grooming.update.intVoteValues
+import ru.v1as.tg.starter.model.TgUser
 
 const val TURN_OVER = "\uD83C\uDCCF\uD83D\uDD04"
 
@@ -96,7 +97,7 @@ class Session(
                             .orEmpty()
                     "⚖ Итог: %.1f$bestMatchStr"
                 }
-            String.format(template, avg)
+            String.format(Locale.US, template, avg)
         } else {
             ""
         }

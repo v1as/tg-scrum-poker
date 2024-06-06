@@ -18,15 +18,12 @@ import ru.v1as.tg.starter.update.inlineKeyboardButton
 
 var VALUES = listOf("1", "2", "3", "5", "8", "13", "21", COFFEE, TURN_OVER)
 
-fun intVoteValues(): List<Int> =
-    VALUES.stream().map { it.toIntOrNull() }.filter { it != null }.map { it!! }.toList()
+fun intVoteValues(): List<Int> = VALUES.map { it.toIntOrNull() }.filterNotNull()
 
 fun Message.replySendMessage(block: SendMessage.() -> Unit = {}): SendMessage {
     val srcMsg = this
     return SendMessage().apply {
-        if (srcMsg.replyToMessage?.messageId != srcMsg.messageThreadId) {
-            messageThreadId = srcMsg.messageThreadId
-        }
+        srcMsg.replyToMessage?.messageThreadId?.let { messageThreadId = it }
         chatId = srcMsg.chatId.toString()
         this.apply(block)
     }

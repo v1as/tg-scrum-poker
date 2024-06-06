@@ -2,6 +2,7 @@ package ru.v1as.tg.grooming.model
 
 import java.util.concurrent.ConcurrentHashMap
 import org.springframework.stereotype.Component
+import ru.v1as.tg.starter.exceptions.TgMessageException
 import ru.v1as.tg.starter.model.TgChat
 
 @Component
@@ -17,7 +18,9 @@ class ChatDataStorage {
     fun newSession(title: String, chat: TgChat): Session {
         val chatData = chatDates.computeIfAbsent(chat.getId()) { ChatData() }
         val session = chatData.session
-        session?.takeIf { !it.closed }?.apply { throw IllegalStateException("Not closed session.") }
+        session
+            ?.takeIf { !it.closed }
+            ?.apply { throw TgMessageException("Уже имеется открытый опрос.") }
 
         val newSession = Session(title, session?.voters() ?: emptySet())
         chatData.session = newSession
