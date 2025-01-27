@@ -1,9 +1,9 @@
 package ru.v1as.tg.grooming.model
 
-import java.util.concurrent.ConcurrentHashMap
 import org.springframework.stereotype.Component
 import ru.v1as.tg.starter.exceptions.TgMessageException
 import ru.v1as.tg.starter.model.TgChat
+import java.util.concurrent.ConcurrentHashMap
 
 @Component
 class ChatDataStorage {
@@ -11,6 +11,10 @@ class ChatDataStorage {
 
     fun getSession(chat: TgChat): Session? {
         return chatDates[chat.getId()]?.session
+    }
+
+    fun getSession(chatId: String, messageId: String): Session? {
+        return chatDates[chatId.toLong()]?.session?.takeIf { it.messageId == messageId.toInt() }
     }
 
     fun getTasks(chat: TgChat) = chatDates.computeIfAbsent(chat.getId()) { ChatData() }.tasks
@@ -22,7 +26,7 @@ class ChatDataStorage {
             ?.takeIf { !it.closed }
             ?.apply { throw TgMessageException("Уже имеется открытый опрос.") }
 
-        val newSession = Session(title, session?.voters() ?: emptySet())
+        val newSession = Session(title, session?.voters() ?: emptySet(), chat.getId())
         chatData.session = newSession
         return newSession
     }

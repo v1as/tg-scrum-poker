@@ -1,12 +1,14 @@
 package ru.v1as.tg.grooming.model
 
+import ru.v1as.tg.grooming.tg.TgBotConst.Companion.getStartLink
+import ru.v1as.tg.grooming.update.command.TIME_ESTIMATION_ARGUMENT
+import ru.v1as.tg.grooming.update.intVoteValues
+import ru.v1as.tg.starter.model.TgUser
 import java.time.Duration
 import java.time.LocalDateTime
 import java.time.LocalDateTime.now
 import java.util.*
 import kotlin.math.abs
-import ru.v1as.tg.grooming.update.intVoteValues
-import ru.v1as.tg.starter.model.TgUser
 
 const val TURN_OVER = "\uD83C\uDCCF\uD83D\uDD04"
 
@@ -21,9 +23,11 @@ const val COMMENT = "\uD83D\uDCAC"
 class Session(
     val title: String,
     voters: Set<TgUser> = emptySet(),
+    val chatId: Long,
     private val started: LocalDateTime = now()
 ) {
     private var votes: MutableMap<TgUser, Vote?> = mutableMapOf()
+    private var estimations: MutableMap<TgUser, Vote?> = mutableMapOf()
     private var avg = -1.0
     private var bestMatch = -1
     var closed = false
@@ -62,7 +66,7 @@ class Session(
     }
 
     fun text(): String {
-        return listOf("\uD83D\uDCDD $title", votesString(), durationString(), voteResultString())
+        return listOf("\uD83D\uDCDD $title", timeEstimationLink(), votesString(), durationString(), voteResultString())
             .filter { it.isNotBlank() }
             .joinToString("\n\n")
     }
@@ -109,6 +113,9 @@ class Session(
             .filter { it != null }
             .mapToInt { it!! }
 
+    private fun timeEstimationLink() =
+        "[⏱️ Оценить время](%s)".format(getStartLink(TIME_ESTIMATION_ARGUMENT + "_${chatId}_${messageId}"))
+
     private fun votesString() =
         votes
             .toList()
@@ -152,8 +159,26 @@ class Session(
             }
         }
     }
+
+    fun estimate(role: EstimationRole, estimation: String, user: TgUser): Voted {
+        val prev = votes[user]
+        if (prev == null) {
+
+        }
+        return if (prev?.value == null) {
+            Voted.VOTED
+        } else {
+            Voted.CHANGED
+        }
+    }
 }
 
-data class Vote(val value: String, val time: LocalDateTime = now()) : Comparable<Vote> {
+data class Vote(
+    val value: String,
+    val time: LocalDateTime = now(),
+    var role: EstimationRole? = null,
+    var durationEstimation: Duration? = null
+) :
+    Comparable<Vote> {
     override fun compareTo(other: Vote) = this.time.compareTo(other.time)
 }
