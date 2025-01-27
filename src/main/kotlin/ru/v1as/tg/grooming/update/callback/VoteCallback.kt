@@ -3,6 +3,7 @@ package ru.v1as.tg.grooming.update.callback
 import mu.KLogging
 import org.springframework.stereotype.Component
 import ru.v1as.tg.grooming.model.ChatDataStorage
+import ru.v1as.tg.grooming.model.TIMER
 import ru.v1as.tg.grooming.model.Voted.*
 import ru.v1as.tg.grooming.update.answerCallback
 import ru.v1as.tg.grooming.update.cleaningReplyMarkupMessage
@@ -33,6 +34,10 @@ class VoteCallback(val chatDataStorage: ChatDataStorage, val tgSender: TgSender)
             tgSender.execute(answerCallback(callbackRequest, "Это голосование уже закрыто."))
             return
         }
+        if (input == TIMER) {
+
+            return
+        }
 
         val voted = session.vote(input, user)
         logger.debug { "Voted: $voted" }
@@ -44,12 +49,11 @@ class VoteCallback(val chatDataStorage: ChatDataStorage, val tgSender: TgSender)
                 }
                 listOf(message)
             }
-            VOTED -> listOf(updateMessage(chat, session))
+            VOTED -> listOf(updateMessage(session))
             CLEARED ->
-                listOf(
-                    updateMessage(chat, session),
-                    answerCallback(callbackRequest, "Вы отозвали голос"))
+                listOf(updateMessage(session), answerCallback(callbackRequest, "Вы отозвали голос"))
             CHANGED -> listOf(answerCallback(callbackRequest, "Вы изменили голос: $input"))
-        }.forEach { tgSender.execute(it) }
+            else -> listOf()
+        }.forEach { tgSender.executeAsync(it) }
     }
 }

@@ -4,7 +4,15 @@ import java.time.Duration
 import java.time.LocalDateTime
 import java.time.LocalDateTime.now
 import java.util.*
+import java.util.concurrent.atomic.AtomicInteger
 import kotlin.math.abs
+import kotlin.math.roundToInt
+import ru.v1as.tg.grooming.model.Voted.CHANGED
+import ru.v1as.tg.grooming.model.Voted.CLEARED
+import ru.v1as.tg.grooming.model.Voted.NONE
+import ru.v1as.tg.grooming.model.Voted.VOTED
+import ru.v1as.tg.grooming.tg.TgBotConst.Companion.getStartLink
+import ru.v1as.tg.grooming.update.command.TIME_ESTIMATION_ARGUMENT
 import ru.v1as.tg.grooming.update.intVoteValues
 import ru.v1as.tg.starter.model.TgUser
 
@@ -18,8 +26,13 @@ const val CARD = "\uD83C\uDCCF"
 
 const val COMMENT = "\uD83D\uDCAC"
 
+const val TIMER = "⏱️"
+
+private val idCounter = AtomicInteger()
+
 class Session(
     val title: String,
+    val chatId: Long,
     voters: Set<TgUser> = emptySet(),
     private val started: LocalDateTime = now()
 ) {
@@ -28,6 +41,7 @@ class Session(
     private var bestMatch = -1
     var closed = false
     var messageId = -1
+    val id = idCounter.incrementAndGet()
 
     init {
         voters.forEach { votes[it] = null }
@@ -62,7 +76,14 @@ class Session(
     }
 
     fun text(): String {
-        return listOf("\uD83D\uDCDD $title", votesString(), durationString(), voteResultString())
+        return listOf(
+                "\uD83D\uDCDD $title",
+                timeEstimationLink(),
+                votersString(),
+                durationString(),
+                voteResultString(),
+                estimationResultString(),
+            )
             .filter { it.isNotBlank() }
             .joinToString("\n\n")
     }
@@ -87,7 +108,9 @@ class Session(
     private fun voteResultString() =
         if (closed) {
             val template =
-                if (voteValueStream().distinct().count() == 1L) {
+                if (voteValueStream().distinct().count() == 0L) {
+                    ""
+                } else if (voteValueStream().distinct().count() == 1L) {
                     "\uD83C\uDF89 Единогласно: %.1f"
                 } else {
                     val bestMatchStr =
@@ -102,6 +125,28 @@ class Session(
             ""
         }
 
+    private fun estimationResultString() =
+        if (closed) {
+            votes.values
+                .filter { it?.estimation?.toIntOrNull() != null }
+                .groupBy { it?.role }
+                .mapValues { it.value.map { it?.estimation!! } }
+                .entries
+                .map {
+                    val average = it.value.map { it.toInt() }.average()
+                    val bestMatchStr =
+                        average
+                            .takeIf { abs(it.roundToInt() - it) > 0.001 }
+                            ?.roundToInt()
+                            ?.let { "  ~  $it" }
+                            .orEmpty()
+                    it.key.toString() + " %.1f".format(average) + bestMatchStr
+                }
+                .joinToString("\n")
+        } else {
+            ""
+        }
+
     private fun voteValueStream() =
         votes.values
             .stream()
@@ -109,23 +154,43 @@ class Session(
             .filter { it != null }
             .mapToInt { it!! }
 
-    private fun votesString() =
+    private fun timeEstimationLink() =
+        "[⏱️ Оценить время](%s)"
+            .format(getStartLink(TIME_ESTIMATION_ARGUMENT + "_${chatId}_${id}"))
+            .takeIf { !closed }
+            .orEmpty()
+
+    private fun votersString() =
         votes
             .toList()
             .sortedWith((compareBy(nullsLast()) { (_, value) -> value }))
             .toMap()
-            .map {
-                val vote =
-                    if (closed) {
-                        val commentSuffix =
-                            needComment(it.value).takeIf { it }?.let { " $COMMENT" }.orEmpty()
-                        ": " + it.value?.value.orEmpty() + commentSuffix
-                    } else {
-                        " " + (it.value?.let { CARD } ?: WAITING)
-                    }
-                it.key.usernameOrFullName() + vote
-            }
+            .map { entry -> stringifyVoter(entry.key, entry.value) }
+            .filter { it.isNotBlank() }
             .joinToString("\n")
+
+    private fun stringifyVoter(user: TgUser, vote: Vote?): String {
+        val voteStr =
+            if (closed) {
+                if (vote == null || vote.value == null && vote.estimation == null) {
+                    return ""
+                }
+                val estimationSuffix =
+                    vote.role?.let { "(" + it.emoji + vote.estimation + ")" }.orEmpty()
+                val commentSuffix = needComment(vote).takeIf { it }?.let { " $COMMENT" }.orEmpty()
+                ": " + vote.value.orEmpty() + estimationSuffix + commentSuffix
+            } else {
+                " " +
+                    (vote
+                        ?.let {
+                            it.value?.let { CARD }.orEmpty() +
+                                it.estimation?.let { TIMER }.orEmpty()
+                        }
+                        .orEmpty()
+                        .ifEmpty { WAITING })
+            }
+        return user.usernameOrFullName() + voteStr
+    }
 
     private fun needComment(vote: Vote?): Boolean {
         val voteInt = vote?.value?.toIntOrNull() ?: return false
@@ -140,20 +205,42 @@ class Session(
             return Voted.CLOSED
         }
         val prev = votes[user]
-        return if (prev?.value == value) {
-            votes[user] = null
-            Voted.CLEARED
+        if (prev?.value == value) {
+            prev.value = null
+            return CLEARED
         } else {
-            votes[user] = Vote(value)
-            if (prev?.value == null) {
-                Voted.VOTED
+            val voted = if (prev?.value == null) VOTED else CHANGED
+            votes[user] = prev?.also { it.value = value } ?: Vote(value)
+            return voted
+        }
+    }
+
+    fun estimate(role: EstimationRole, estimation: String, user: TgUser): Voted {
+        val prev = votes[user]?.let { Vote(it) }
+        val vote = votes[user] ?: Vote(null, role = role, estimation = estimation)
+        vote.role = role
+        vote.estimation = estimation
+        votes[user] = vote
+        return if (prev?.estimation == null) {
+            VOTED
+        } else {
+            if (prev.estimation == estimation && prev.role == role) {
+                NONE
             } else {
-                Voted.CHANGED
+                CHANGED
             }
         }
     }
 }
 
-data class Vote(val value: String, val time: LocalDateTime = now()) : Comparable<Vote> {
+data class Vote(
+    var value: String?,
+    val time: LocalDateTime = now(),
+    var role: EstimationRole? = null,
+    var estimation: String? = null
+) : Comparable<Vote> {
+
+    constructor(vote: Vote) : this(vote.value, now(), vote.role, vote.estimation)
+
     override fun compareTo(other: Vote) = this.time.compareTo(other.time)
 }

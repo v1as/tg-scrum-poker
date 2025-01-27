@@ -11,6 +11,7 @@ tg:
 
 scrum:
   values: 1,2,3,5,8,13,21
+  roles: BA 📊,DEV 🔧,QA 💎
 
 logging:
   pattern:

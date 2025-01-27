@@ -13,6 +13,10 @@ class ChatDataStorage {
         return chatDates[chat.getId()]?.session
     }
 
+    fun getSession(chatId: String, sessionId: String): Session? {
+        return chatDates[chatId.toLong()]?.session?.takeIf { it.id == sessionId.toInt() }
+    }
+
     fun getTasks(chat: TgChat) = chatDates.computeIfAbsent(chat.getId()) { ChatData() }.tasks
 
     fun newSession(title: String, chat: TgChat): Session {
@@ -22,7 +26,7 @@ class ChatDataStorage {
             ?.takeIf { !it.closed }
             ?.apply { throw TgMessageException("Уже имеется открытый опрос.") }
 
-        val newSession = Session(title, session?.voters() ?: emptySet())
+        val newSession = Session(title, chat.getId(), session?.voters() ?: emptySet())
         chatData.session = newSession
         return newSession
     }
