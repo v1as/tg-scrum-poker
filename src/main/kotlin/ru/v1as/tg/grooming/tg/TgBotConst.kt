@@ -5,7 +5,6 @@ import ru.v1as.tg.starter.TgBotProperties
 
 private val START_URL_FORMAT = "https://telegram.me/%s?start=%s"
 
-
 @Component
 class TgBotConst(private val botProps: TgBotProperties) {
 
@@ -18,5 +17,4 @@ class TgBotConst(private val botProps: TgBotProperties) {
     init {
         botName = botProps.username
     }
-
 }

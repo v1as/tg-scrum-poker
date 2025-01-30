@@ -29,21 +29,19 @@ class StartCommand(
 
     override fun handle(command: CommandRequest, user: TgUserWrapper, chat: TgChatWrapper) {
         val msgSrc = command.message
-        if (chat.isUserChat() && command.arguments.size == 3
-            && command.arguments.first().startsWith(TIME_ESTIMATION_ARGUMENT)
-        ) {
+        if (chat.isUserChat() &&
+            command.arguments.size == 3 &&
+            command.arguments.first().startsWith(TIME_ESTIMATION_ARGUMENT)) {
             val chatId = command.arguments[1]
-            val messageId = command.arguments[2]
+            val sessionId = command.arguments[2]
             val session =
-                chatData.getSession(chatId.toLong(), messageId.toInt())
-                    ?: throw throw TgMessageException("Задача для оценки не найдена.")
+                chatData.getSession(chatId, sessionId)
+                    ?: throw TgMessageException("Задача для оценки не найдена.")
             tgSender.execute(
-                SendMessage(chat.getId().toString(), "Выберите роль оценки для задачи: ${session.title}")
-                    .also {
-                        it.replyMarkup =
-                            rolesKeyboard(chatId, messageId)
-                    })
-
+                SendMessage(
+                        chat.getId().toString(),
+                        "Выберите роль оценки для задачи: ${session.title}")
+                    .also { it.replyMarkup = rolesKeyboard(chatId, sessionId) })
         } else if (!chat.isUserChat() && command.arguments.isNotEmpty()) {
             chatData
                 .getSession(chat)
@@ -64,16 +62,14 @@ class StartCommand(
                         msgSrc.replySendMessage {
                             text =
                                 "Отправьте, описание задачи ответом на это сообщение.\n" +
-                                        "(Бот имеет доступ только ответам на свои сообщения)"
+                                    "(Бот имеет доступ только ответам на свои сообщения)"
                         })
                 requestUpdateHandler.register(
                     replyOnMessageRequest(
-                        msg, { openSession(chat, it.message.text, it.message) }, user
-                    )
-                )
+                        msg, { openSession(chat, it.message.text, it.message) }, user))
             }
         } else {
-//            tgSender.message()
+            tgSender.message(chat, "Эта команда работает только в групповом чате.")
         }
     }
 

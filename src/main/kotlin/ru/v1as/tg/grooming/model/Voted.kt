@@ -4,5 +4,6 @@ enum class Voted {
     VOTED,
     CHANGED,
     CLEARED,
-    CLOSED
+    CLOSED,
+    NONE
 }
