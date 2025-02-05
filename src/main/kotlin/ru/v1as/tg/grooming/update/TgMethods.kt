@@ -3,7 +3,6 @@ package ru.v1as.tg.grooming.update
 import mu.KLogging
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
-import org.telegram.telegrambots.meta.api.methods.ParseMode
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText
 import org.telegram.telegrambots.meta.api.objects.Message
@@ -13,17 +12,18 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKe
 import ru.v1as.tg.grooming.model.COFFEE
 import ru.v1as.tg.grooming.model.EstimationRole
 import ru.v1as.tg.grooming.model.Session
-import ru.v1as.tg.grooming.model.TIMER
 import ru.v1as.tg.grooming.model.TURN_OVER
+import ru.v1as.tg.grooming.tg.TgBotConst.Companion.getStartLink
 import ru.v1as.tg.grooming.update.callback.ESTIMATE_DAYS_CALLBACK
 import ru.v1as.tg.grooming.update.callback.ESTIMATE_ROLE_CALLBACK
+import ru.v1as.tg.grooming.update.command.TIME_ESTIMATION_ARGUMENT
 import ru.v1as.tg.starter.model.TgChat
 import ru.v1as.tg.starter.update.answerCallbackQuery
 import ru.v1as.tg.starter.update.callback.CallbackRequest
 import ru.v1as.tg.starter.update.editMessageText
 import ru.v1as.tg.starter.update.inlineKeyboardButton
 
-var VALUES = listOf("1", "2", "3", "5", "8", "13", "21", COFFEE, TURN_OVER, TIMER)
+var VALUES = listOf("1", "2", "3", "5", "8", "13", "21", COFFEE)
 var ROLES =
     listOf(EstimationRole("BA", "🔍"), EstimationRole("DEV", "🛠"), EstimationRole("QA", "💎"))
 var DAYS = listOf("1", "2", "3", "4", "5", "10", "15", COFFEE)
@@ -42,18 +42,16 @@ fun Message.replySendMessage(block: SendMessage.() -> Unit = {}): SendMessage {
 fun buildSessionMessage(message: Message, session: Session) =
     message.replySendMessage {
         text = session.text()
-        parseMode = ParseMode.MARKDOWN
         disableWebPagePreview = true
-        replyMarkup = votingKeyboard()
+        replyMarkup = votingKeyboard(session)
     }
 
 fun updateSessionMessage(session: Session): EditMessageText = editMessageText {
     this.chatId = session.chatId.toString()
     messageId = session.messageId
     text = session.text()
-    parseMode = ParseMode.MARKDOWN
     disableWebPagePreview = true
-    replyMarkup = votingKeyboard()
+    replyMarkup = votingKeyboard(session)
 }
 
 fun cleaningReplyMarkupSessionMessage(message: Message) = editMessageText {
@@ -66,7 +64,6 @@ fun cleaningReplyMarkupSessionMessage(message: Message) = editMessageText {
 fun cleaningReplyMarkupSessionMessage(chat: TgChat, session: Session) = editMessageText {
     chatId = chat.getId().toString()
     messageId = session.messageId
-    parseMode = ParseMode.MARKDOWN
     text = session.text()
     replyMarkup = columnInlineKeyboardMarkup()
 }
@@ -100,11 +97,11 @@ fun answerCallback(callbackRequest: CallbackRequest, text: String) = answerCallb
     this.text = text
 }
 
-fun votingKeyboard(): InlineKeyboardMarkup {
+fun votingKeyboard(session: Session): InlineKeyboardMarkup {
     val rows = mutableListOf<List<InlineKeyboardButton>>()
     var tempRow = mutableListOf<InlineKeyboardButton>()
     for (value in VALUES) {
-        if (tempRow.size == 2) {
+        if (tempRow.size == 4) {
             rows += tempRow
             tempRow = mutableListOf()
         }
@@ -116,6 +113,18 @@ fun votingKeyboard(): InlineKeyboardMarkup {
     if (tempRow.isNotEmpty()) {
         rows += tempRow
     }
+    rows +=
+        listOf(
+            inlineKeyboardButton {
+                text = "⏱️ Оценить время"
+                url = getStartLink(TIME_ESTIMATION_ARGUMENT + "_${session.chatId}_${session.id}")
+            })
+    rows +=
+        listOf(
+            inlineKeyboardButton {
+                text = TURN_OVER
+                callbackData = "vote_$TURN_OVER"
+            })
     return InlineKeyboardMarkup(rows)
 }
 
@@ -147,6 +156,7 @@ fun estimationDaysKeyboard(chatId: String, messageId: String, role: String): Inl
 }
 
 @Component
+@Suppress("unused")
 class TgMethods(
     @Value("\${scrum.values}") val valuesStr: String,
     @Value("\${scrum.roles}") val estimateRoles: String
@@ -154,15 +164,7 @@ class TgMethods(
     companion object : KLogging()
 
     init {
-        VALUES =
-            valuesStr
-                .split(",")
-                .toMutableList()
-                .also {
-                    it.add(COFFEE)
-                    it.add(TURN_OVER)
-                }
-                .toList()
+        VALUES = valuesStr.split(",").toMutableList().also { it.add(COFFEE) }.toList()
         ROLES =
             estimateRoles
                 .split(",")

@@ -11,8 +11,6 @@ import ru.v1as.tg.grooming.model.Voted.CHANGED
 import ru.v1as.tg.grooming.model.Voted.CLEARED
 import ru.v1as.tg.grooming.model.Voted.NONE
 import ru.v1as.tg.grooming.model.Voted.VOTED
-import ru.v1as.tg.grooming.tg.TgBotConst.Companion.getStartLink
-import ru.v1as.tg.grooming.update.command.TIME_ESTIMATION_ARGUMENT
 import ru.v1as.tg.grooming.update.intVoteValues
 import ru.v1as.tg.starter.model.TgUser
 
@@ -78,7 +76,6 @@ class Session(
     fun text(): String {
         return listOf(
                 "\uD83D\uDCDD $title",
-                timeEstimationLink(),
                 votersString(),
                 durationString(),
                 voteResultString(),
@@ -153,12 +150,6 @@ class Session(
             .map { it?.value?.toIntOrNull() }
             .filter { it != null }
             .mapToInt { it!! }
-
-    private fun timeEstimationLink() =
-        "[⏱️ Оценить время](%s)"
-            .format(getStartLink(TIME_ESTIMATION_ARGUMENT + "_${chatId}_${id}"))
-            .takeIf { !closed }
-            .orEmpty()
 
     private fun votersString() =
         votes
