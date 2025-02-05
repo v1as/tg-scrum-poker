@@ -6,9 +6,9 @@ import ru.v1as.tg.grooming.model.ChatDataStorage
 import ru.v1as.tg.grooming.model.TIMER
 import ru.v1as.tg.grooming.model.Voted.*
 import ru.v1as.tg.grooming.update.answerCallback
-import ru.v1as.tg.grooming.update.cleaningReplyMarkupMessage
+import ru.v1as.tg.grooming.update.cleaningReplyMarkupSessionMessage
 import ru.v1as.tg.grooming.update.columnInlineKeyboardMarkup
-import ru.v1as.tg.grooming.update.updateMessage
+import ru.v1as.tg.grooming.update.updateSessionMessage
 import ru.v1as.tg.starter.TgSender
 import ru.v1as.tg.starter.model.TgChat
 import ru.v1as.tg.starter.model.TgUser
@@ -30,7 +30,7 @@ class VoteCallback(val chatDataStorage: ChatDataStorage, val tgSender: TgSender)
         val session = chatDataStorage.getSession(chat)
         val callbackMsg = callbackRequest.update.callbackQuery.message
         if (session == null || session.closed || session.messageId != callbackMsg.messageId) {
-            tgSender.execute(cleaningReplyMarkupMessage(callbackMsg))
+            tgSender.execute(cleaningReplyMarkupSessionMessage(callbackMsg))
             tgSender.execute(answerCallback(callbackRequest, "Это голосование уже закрыто."))
             return
         }
@@ -43,15 +43,17 @@ class VoteCallback(val chatDataStorage: ChatDataStorage, val tgSender: TgSender)
         logger.debug { "Voted: $voted" }
         when (voted) {
             CLOSED -> {
-                val message = cleaningReplyMarkupMessage(chat, session)
+                val message = cleaningReplyMarkupSessionMessage(chat, session)
                 if (session.needDiscussion()) {
                     message.replyMarkup = columnInlineKeyboardMarkup("Повторить" to "repeat")
                 }
                 listOf(message)
             }
-            VOTED -> listOf(updateMessage(session))
+            VOTED -> listOf(updateSessionMessage(session))
             CLEARED ->
-                listOf(updateMessage(session), answerCallback(callbackRequest, "Вы отозвали голос"))
+                listOf(
+                    updateSessionMessage(session),
+                    answerCallback(callbackRequest, "Вы отозвали голос"))
             CHANGED -> listOf(answerCallback(callbackRequest, "Вы изменили голос: $input"))
             else -> listOf()
         }.forEach { tgSender.executeAsync(it) }

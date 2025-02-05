@@ -2,7 +2,7 @@ package ru.v1as.tg.grooming.update.command
 
 import org.springframework.stereotype.Component
 import ru.v1as.tg.grooming.model.ChatDataStorage
-import ru.v1as.tg.grooming.update.buildMessage
+import ru.v1as.tg.grooming.update.buildSessionMessage
 import ru.v1as.tg.grooming.update.replySendMessage
 import ru.v1as.tg.starter.TgSender
 import ru.v1as.tg.starter.model.base.TgChatWrapper
@@ -21,7 +21,7 @@ class RepeatCommand(val tgSender: TgSender, val chatData: ChatDataStorage) :
             return
         }
         val session = chatData.newSession(prevSession.title, chat)
-        val sessionMsg = tgSender.execute(buildMessage(msg, session))
+        val sessionMsg = tgSender.execute(buildSessionMessage(msg, session))
         session.messageId = sessionMsg.messageId
     }
 }

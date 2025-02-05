@@ -4,8 +4,8 @@ import org.springframework.stereotype.Component
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage
 import org.telegram.telegrambots.meta.api.objects.Message
 import ru.v1as.tg.grooming.model.ChatDataStorage
-import ru.v1as.tg.grooming.update.buildMessage
-import ru.v1as.tg.grooming.update.cleaningReplyMarkupMessage
+import ru.v1as.tg.grooming.update.buildSessionMessage
+import ru.v1as.tg.grooming.update.cleaningReplyMarkupSessionMessage
 import ru.v1as.tg.grooming.update.replySendMessage
 import ru.v1as.tg.grooming.update.rolesKeyboard
 import ru.v1as.tg.starter.TgSender
@@ -48,7 +48,7 @@ class StartCommand(
                 ?.takeIf { !it.closed }
                 ?.let {
                     it.close()
-                    tgSender.execute(cleaningReplyMarkupMessage(chat, it))
+                    tgSender.execute(cleaningReplyMarkupSessionMessage(chat, it))
                 }
             openSession(chat, command.argumentsString, msgSrc)
         } else if (!chat.isUserChat()) {
@@ -75,7 +75,7 @@ class StartCommand(
 
     private fun openSession(chat: TgChat, title: String, msgSrc: Message) {
         val session = chatData.newSession(title, chat)
-        val message = tgSender.execute(buildMessage(msgSrc, session))
+        val message = tgSender.execute(buildSessionMessage(msgSrc, session))
         session.messageId = message.messageId
     }
 }

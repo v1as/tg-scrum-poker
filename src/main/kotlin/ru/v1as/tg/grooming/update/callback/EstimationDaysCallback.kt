@@ -8,7 +8,7 @@ import ru.v1as.tg.grooming.model.Voted.CLOSED
 import ru.v1as.tg.grooming.model.Voted.NONE
 import ru.v1as.tg.grooming.update.ROLES
 import ru.v1as.tg.grooming.update.chosenByCallbackEditMessageText
-import ru.v1as.tg.grooming.update.updateMessage
+import ru.v1as.tg.grooming.update.updateSessionMessage
 import ru.v1as.tg.starter.TgSender
 import ru.v1as.tg.starter.exceptions.TgMessageException
 import ru.v1as.tg.starter.model.TgUser
@@ -51,7 +51,7 @@ class EstimationDaysCallback(val tgSender: TgSender, val chatData: ChatDataStora
         when (voted) {
             CLOSED -> throw throw TgMessageException("Задача уже закрыта.")
             NONE -> throw throw TgMessageException("Вы уже внесли такую оценку.")
-            else -> listOf(updateMessage(session))
+            else -> listOf(updateSessionMessage(session))
         }.forEach { tgSender.executeAsync(it) }
         return handled()
     }

@@ -3,8 +3,8 @@ package ru.v1as.tg.grooming.update.callback
 import org.springframework.stereotype.Component
 import ru.v1as.tg.grooming.model.ChatDataStorage
 import ru.v1as.tg.grooming.update.answerCallback
-import ru.v1as.tg.grooming.update.buildMessage
-import ru.v1as.tg.grooming.update.cleaningReplyMarkupMessage
+import ru.v1as.tg.grooming.update.buildSessionMessage
+import ru.v1as.tg.grooming.update.cleaningReplyMarkupSessionMessage
 import ru.v1as.tg.starter.TgSender
 import ru.v1as.tg.starter.model.TgChat
 import ru.v1as.tg.starter.model.TgUser
@@ -21,13 +21,13 @@ class RepeatCallback(val chatData: ChatDataStorage, val tgSender: TgSender) :
         if (prevSession == null ||
             !prevSession.closed ||
             prevSession.messageId != callbackMsg.messageId) {
-            tgSender.execute(cleaningReplyMarkupMessage(callbackMsg))
+            tgSender.execute(cleaningReplyMarkupSessionMessage(callbackMsg))
             tgSender.execute(answerCallback(callbackRequest, "Голосование не найдено."))
             return
         }
-        tgSender.execute(cleaningReplyMarkupMessage(callbackMsg))
+        tgSender.execute(cleaningReplyMarkupSessionMessage(callbackMsg))
         val session = chatData.newSession(prevSession.title, chat)
-        val message = tgSender.execute(buildMessage(callbackMsg, session))
+        val message = tgSender.execute(buildSessionMessage(callbackMsg, session))
         session.messageId = message.messageId
     }
 }

@@ -39,29 +39,31 @@ fun Message.replySendMessage(block: SendMessage.() -> Unit = {}): SendMessage {
     }
 }
 
-fun buildMessage(message: Message, session: Session) =
+fun buildSessionMessage(message: Message, session: Session) =
     message.replySendMessage {
         text = session.text()
         parseMode = ParseMode.MARKDOWN
+        disableWebPagePreview = true
         replyMarkup = votingKeyboard()
     }
 
-fun updateMessage(session: Session): EditMessageText = editMessageText {
+fun updateSessionMessage(session: Session): EditMessageText = editMessageText {
     this.chatId = session.chatId.toString()
     messageId = session.messageId
     text = session.text()
     parseMode = ParseMode.MARKDOWN
+    disableWebPagePreview = true
     replyMarkup = votingKeyboard()
 }
 
-fun cleaningReplyMarkupMessage(message: Message) = editMessageText {
+fun cleaningReplyMarkupSessionMessage(message: Message) = editMessageText {
     chatId = message.chatId.toString()
     messageId = message.messageId
     text = message.text
     replyMarkup = columnInlineKeyboardMarkup()
 }
 
-fun cleaningReplyMarkupMessage(chat: TgChat, session: Session) = editMessageText {
+fun cleaningReplyMarkupSessionMessage(chat: TgChat, session: Session) = editMessageText {
     chatId = chat.getId().toString()
     messageId = session.messageId
     parseMode = ParseMode.MARKDOWN
